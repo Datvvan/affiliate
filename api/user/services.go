@@ -2,7 +2,6 @@ package user
 
 import (
 	"context"
-	"log"
 	"time"
 
 	"github.com/datvvan/affiliate/db"
@@ -31,15 +30,14 @@ func subscribe(ctx context.Context, user *model.UserSubscription) error {
 	instance := db.GetInstance()
 	return instance.DB.RunInTransaction(ctx, func(tx *pg.Tx) error {
 		subscription := &model.Subscription{
-			ID:           user.SubscriptionID,
-			UserID:       user.ID,
-			MemberType:   user.MemberType,
-			LastPaidDate: user.LastPaidDate,
-			ExpiredTime:  user.ExpiredTime,
-			UpdateAt:     user.SubUpdateAt,
+			ID:             user.SubscriptionID,
+			UserID:         user.ID,
+			MemberType:     user.MemberType,
+			EndOfTrialTime: user.EndOfTrialTime,
+			LastPaidDate:   user.LastPaidDate,
+			ExpiredTime:    user.ExpiredTime,
+			UpdateAt:       user.SubUpdateAt,
 		}
-
-		log.Println("===================")
 
 		if user.MemberType == model.TrialMember {
 			subscription.ExpiredTime = newExpiredTimeTrialMemberAndPaidMember(subscription.ExpiredTime)
@@ -48,7 +46,7 @@ func subscribe(ctx context.Context, user *model.UserSubscription) error {
 				if err != nil {
 					return err
 				}
-				affiliateReferrals.CommissionStatus = model.CommissionPending
+				affiliateReferrals.IsConversion = true
 				if err = db.NewAffiliateQuery(tx).AffiliateReferralUpdateByID(ctx, affiliateReferrals); err != nil {
 					return err
 				}
@@ -58,6 +56,18 @@ func subscribe(ctx context.Context, user *model.UserSubscription) error {
 			subscription.ExpiredTime = newExpiredTimeTrialMemberAndPaidMember(subscription.ExpiredTime)
 		} else {
 			subscription.ExpiredTime = newExpiredTimeNonPaidMember(subscription.ExpiredTime)
+			if user.Intermediary != "" {
+				affiliateReferrals, err := changeCommissionStatus(user.Intermediary, user.ID)
+				if err != nil {
+					return err
+				}
+				affiliateReferrals.IsConversion = true
+				subscription.EndOfTrialTime = time.Now()
+				if err = db.NewAffiliateQuery(tx).AffiliateReferralUpdateByID(ctx, affiliateReferrals); err != nil {
+					return err
+				}
+
+			}
 		}
 
 		subscription.MemberType = model.PaidMember
@@ -71,13 +81,36 @@ func subscribe(ctx context.Context, user *model.UserSubscription) error {
 
 }
 
+func unsubscribe(ctx context.Context, user *model.UserSubscription) error {
+	if user.Intermediary != "" {
+		affiliateReferrals, err := db.AffiliateReferralFindOneWithRelationParams(user.Intermediary, user.ID)
+		if err != nil {
+			return err
+		}
+
+		if time.Now().Before(user.EndOfTrialTime.Add(time.Hour * util.ChallengeTime)) {
+			affiliateReferrals.IsCanceledSub = true
+			affiliateReferrals.CommissionStatus = model.CommissionReject
+		}
+
+		err = db.NewAffiliateQuery(nil).AffiliateReferralUpdateByID(ctx, affiliateReferrals)
+		if err != nil {
+			return err
+		}
+		return nil
+	}
+	return nil
+}
+
 func changeCommissionStatus(affiliate string, referral string) (*model.AffiliateReferrals, error) {
 	affiliateReferrals := &model.AffiliateReferrals{}
 	affiliateReferrals, err := db.AffiliateReferralFindOneWithRelationParams(affiliate, referral)
 	if err != nil {
 		return nil, err
 	}
-	affiliateReferrals.CommissionStatus = model.CommissionPending
+	if !affiliateReferrals.IsCanceledSub && affiliateReferrals.CommissionStatus == "" {
+		affiliateReferrals.CommissionStatus = model.CommissionPending
+	}
 
 	return affiliateReferrals, nil
 

@@ -30,6 +30,7 @@ CREATE TABLE subscriptions (
     user_id UUID,
     member_type VARCHAR(50),
     last_paid_date TIMESTAMP,
+    end_of_trial_time TIMESTAMP,
     expired_time TIMESTAMP,
     update_at TIMESTAMP DEFAULT NOW(),
     FOREIGN KEY (user_id) REFERENCES users(id)

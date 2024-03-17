@@ -26,9 +26,9 @@ type UserSubscription struct {
 	RefCode          string             `json:"ref_code"`
 	Type             UserTypeEnum       `json:"type"`
 	CommissionAmount uint16             `json:"commission_amount"`
+	EndOfTrialTime   time.Time          `json:"end_of_trial_time"`
 	Intermediary     string             `json:"intermediary"`
 	SubscriptionID   uint64             `json:"subscription_id" pg:"subscription_id"`
-	UserID           string             `json:"user_id"`
 	MemberType       SubscriptionStatus `json:"member_type" `
 	LastPaidDate     time.Time          `json:"last_paid_date"`
 	ExpiredTime      time.Time          `json:"expired_time"`

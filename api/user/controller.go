@@ -43,5 +43,13 @@ func (controller *Controller) Subscription(c *gin.Context) {
 		}
 		c.JSON(200, util.SuccessResponse(resp))
 		return
+	} else {
+		resp, err := controller.biz.Unsubscribe(c, input)
+		if err != nil {
+			c.JSON(400, util.ErrorResponse(400, err.Error()))
+			return
+		}
+		c.JSON(200, util.SuccessResponse(resp))
+		return
 	}
 }

@@ -51,6 +51,7 @@ func GetUserCommissionByUserID(userID string) (*model.UserSubscription, error) {
 		ColumnExpr(`"s"."id" as subscription_id`).
 		ColumnExpr(`"s"."member_type"`).
 		ColumnExpr(`"s"."last_paid_date"`).
+		ColumnExpr(`"s"."end_of_trial_time"`).
 		ColumnExpr(`"s"."expired_time"`).
 		ColumnExpr(`"s"."update_at" as sub_update_at`).
 		Join(`JOIN subscriptions as s ON "s"."user_id" = "user"."id"`).

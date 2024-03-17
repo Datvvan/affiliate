@@ -12,6 +12,7 @@ import (
 type Business interface {
 	AddRefCode(context.Context, InputAddRefCode) (interface{}, error)
 	Subscribe(context.Context, InputSubscription) (interface{}, error)
+	Unsubscribe(context.Context, InputSubscription) (interface{}, error)
 }
 
 type business struct{}
@@ -79,5 +80,25 @@ func (b *business) Subscribe(ctx context.Context, input InputSubscription) (inte
 
 	err = subscribe(ctx, userSub)
 
+	return userSub, nil
+}
+
+func (b *business) Unsubscribe(ctx context.Context, input InputSubscription) (interface{}, error) {
+	userSub := &model.UserSubscription{}
+
+	userSub, err := db.GetUserCommissionByUserID(input.UserID)
+	if err != nil {
+		return nil, err
+	}
+
+	if userSub.Type == model.AdminType {
+		return nil, errors.New("your role is admin")
+	}
+
+	if userSub.MemberType != model.PaidMember {
+		return nil, errors.New("you are not paid member")
+	}
+
+	err = unsubscribe(ctx, userSub)
 	return userSub, nil
 }
