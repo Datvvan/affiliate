@@ -9,7 +9,7 @@ import (
 
 func CountAllCommissionCompleteTransactionByUserID(userID string) (int, error) {
 	data := &model.UserTransaction{}
-	count, err := GetInstance().DB.Model(data).Where("user_id = ?", userID).Where("type = ?", model.SubscriptionTrans).Where("status = ?", model.TransComplete).Count()
+	count, err := GetInstance().DB.Model(data).Where("user_id = ?", userID).Where("type = ?", model.CommissionTrans).Where("status = ?", model.TransComplete).Count()
 	if err != nil {
 		return 0, err
 	}

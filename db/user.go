@@ -74,8 +74,9 @@ func GetAllAffiliateCommissionList(limit int, offset int, emailQuery string, isC
 			ColumnExpr(`"s"."end_of_trial_time"`).
 			Join(`JOIN affiliate_referrals as a ON "a"."affiliate" = "user"."id"`).
 			Join(`JOIN users as u ON "u"."id"="a"."referral"`).
-			Join(`JOIN subscriptions as s ON "s"."user_id" = "user"."id"`).
+			Join(`JOIN subscriptions as s ON "s"."user_id" = "u"."id"`).
 			Where("is_conversion", true).
+			Where(`commission_status = ?`, "PENDING").
 			Where("end_of_trial_time < ?", time.Now().Add(-time.Hour*util.ChallengeTime)).
 			WhereGroup(func(q *orm.Query) (*orm.Query, error) {
 				q = q.Where(`"user"."email" LIKE ?`, "%"+emailQuery+"%")

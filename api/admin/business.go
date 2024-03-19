@@ -61,6 +61,7 @@ func (b *business) ApproveCommission(ctx context.Context, input InputReviewCommi
 				UserID: affiliateReferrals.Affiliate,
 				Type:   model.CommissionTrans,
 				Status: model.TransProcessing,
+				Amount: util.CommissionAmount,
 			}
 
 			err = db.NewDBQuery(tx).TransactionInsertOne(ctx, transaction)

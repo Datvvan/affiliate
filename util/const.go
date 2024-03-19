@@ -7,6 +7,8 @@ const (
 
 const CommissionAmount = 19 //$
 
+const SubscriptionFee = 30
+
 type PaypalEvent string
 
 const (

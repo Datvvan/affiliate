@@ -16,6 +16,7 @@ type UserTransaction struct {
 	UserID    string            `json:"user_id"`
 	Type      TransactionType   `json:"type"`
 	Status    TransactionStatus `json:"status"`
+	Amount    float32           `json:"amount" pg:",use_zero"`
 	CreateAt  time.Time         `json:"create_at"`
 	UpdateAt  time.Time         `json:"update_at"`
 }

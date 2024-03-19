@@ -85,8 +85,12 @@ func GetAffiliateTransaction(batchID string) ([]model.AffiliateTransaction, erro
 		ColumnExpr(`"affiliate_referrals"."is_conversion"`).
 		ColumnExpr(`"affiliate_referrals"."transaction_id"`).
 		ColumnExpr(`"affiliate_referrals"."batch_id" `).
+		ColumnExpr(`"affiliate_referrals"."create_at" as affiliate_create_at`).
 		ColumnExpr(`"t"."type" as transaction_type`).
 		ColumnExpr(`"t"."status" as transaction_status`).
+		ColumnExpr(`"t"."amount"`).
+		ColumnExpr(`"t".create_at`).
+		ColumnExpr(`"t".update_at`).
 		Join(`JOIN user_transaction as t ON "t"."id"="affiliate_referrals"."transaction_id"`).
 		Where("batch_id = ?", batchID).Select(&result)
 

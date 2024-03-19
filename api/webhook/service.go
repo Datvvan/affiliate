@@ -17,6 +17,7 @@ func subscribe(ctx context.Context, user *model.UserSubscription) error {
 		transaction := &model.UserTransaction{
 			UserID: user.ID,
 			Type:   model.SubscriptionTrans,
+			Amount: util.SubscriptionFee,
 			Status: model.TransComplete,
 		}
 		if err := db.NewDBQuery(tx).TransactionInsertOne(ctx, transaction); err != nil {

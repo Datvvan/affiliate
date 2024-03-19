@@ -3,6 +3,7 @@ package webhook
 import (
 	"context"
 	"errors"
+	"time"
 
 	"github.com/datvvan/affiliate/db"
 	"github.com/datvvan/affiliate/model"
@@ -48,9 +49,13 @@ func (b *business) BatchPayoutComplete(ctx context.Context, batchID string) erro
 	return db.GetInstance().DB.RunInTransaction(ctx, func(tx *pg.Tx) error {
 		for _, v := range data {
 			transaction := &model.UserTransaction{
-				UserID: v.Affiliate,
-				Type:   v.TransactionType,
-				Status: model.TransComplete,
+				ID:       uint64(v.TransactionID),
+				UserID:   v.Affiliate,
+				Type:     v.TransactionType,
+				Status:   model.TransComplete,
+				Amount:   v.Amount,
+				UpdateAt: time.Now(),
+				CreateAt: v.CreateAt,
 			}
 			err := db.NewDBQuery(tx).TransactionUpdateByID(ctx, transaction)
 			if err != nil {
@@ -70,17 +75,20 @@ func (b *business) BatchPayoutDenied(ctx context.Context, batchID string) error 
 	return db.GetInstance().DB.RunInTransaction(ctx, func(tx *pg.Tx) error {
 		for _, v := range data {
 			transaction := &model.UserTransaction{
-				ID:     uint64(v.TransactionID),
-				UserID: v.Affiliate,
-				Type:   v.TransactionType,
-				Status: model.TransCancel,
+				ID:       uint64(v.TransactionID),
+				UserID:   v.Affiliate,
+				Type:     v.TransactionType,
+				Amount:   v.Amount,
+				Status:   model.TransCancel,
+				UpdateAt: time.Now(),
+				CreateAt: v.CreateAt,
 			}
 			err := db.NewDBQuery(tx).TransactionUpdateByID(ctx, transaction)
 			if err != nil {
 				return err
 			}
 
-			affiliateReferral := &model.AffiliateReferrals{
+			affiliateReferrals := &model.AffiliateReferrals{
 				ID:               v.ID,
 				Affiliate:        v.Affiliate,
 				Referral:         v.Referral,
@@ -89,9 +97,11 @@ func (b *business) BatchPayoutDenied(ctx context.Context, batchID string) error 
 				CommissionStatus: model.CommissionPending,
 				TransactionID:    0,
 				BatchID:          "",
+				UpdateAt:         time.Now(),
+				CreateAt:         v.AffiliateCreateAt,
 			}
 
-			err = db.NewDBQuery(tx).AffiliateReferralUpdateByID(ctx, affiliateReferral)
+			err = db.NewDBQuery(tx).AffiliateReferralUpdateByID(ctx, affiliateReferrals)
 			if err != nil {
 				return err
 			}

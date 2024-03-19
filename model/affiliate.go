@@ -43,7 +43,11 @@ type AffiliateTransaction struct {
 	IsCanceledSub     bool              `json:"is_canceled_sub" pg:",use_zero"` //check user used to canceled subscriptions or not
 	CommissionStatus  CommissionStatus  `json:"commission_status"`
 	TransactionID     int               `json:"transaction_id"`
+	AffiliateCreateAt time.Time         `json:"affiliate_create_at" pg:"affiliate_create_at"`
 	BatchID           string            `json:"batch_id"`
+	Amount            float32           `json:"amount"`
 	TransactionType   TransactionType   `json:"transaction_type" pg:"transaction_type"`
 	TransactionStatus TransactionStatus `json:"transaction_status" pg:"transaction_status"`
+	UpdateAt          time.Time         `json:"update_at"`
+	CreateAt          time.Time         `json:"create_at"`
 }
