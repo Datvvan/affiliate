@@ -1,6 +1,9 @@
 package user
 
 import (
+	"log"
+	"strconv"
+
 	"github.com/datvvan/affiliate/util"
 	"github.com/gin-gonic/gin"
 )
@@ -36,7 +39,7 @@ func (controller *Controller) Subscription(c *gin.Context) {
 		return
 	}
 	if input.IsSubscribe {
-		resp, err := controller.biz.Subscribe(c, input)
+		resp, err := controller.biz.Subscribe(c)
 		if err != nil {
 			c.JSON(400, util.ErrorResponse(400, err.Error()))
 			return
@@ -52,4 +55,23 @@ func (controller *Controller) Subscription(c *gin.Context) {
 		c.JSON(200, util.SuccessResponse(resp))
 		return
 	}
+}
+
+func (controller *Controller) GetReferralList(c *gin.Context) {
+	id := c.Param("id")
+	input := c.Request.URL.Query()
+	page, _ := strconv.Atoi(input["page"][0])
+	limit, _ := strconv.Atoi(input["limit"][0])
+	email := input["email"][0]
+	log.Println(input)
+	isConversion, _ := strconv.ParseBool(input["isConversion"][0])
+	offset, limit := util.GetPagination(page, limit)
+
+	resp, err := controller.biz.ReferralList(c, id, offset, limit, email, isConversion)
+	if err != nil {
+		c.JSON(400, util.ErrorResponse(400, err.Error()))
+		return
+	}
+	c.JSON(200, util.SuccessResponse(resp))
+	return
 }

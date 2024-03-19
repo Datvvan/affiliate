@@ -7,12 +7,14 @@ import (
 
 	"github.com/datvvan/affiliate/db"
 	"github.com/datvvan/affiliate/model"
+	"github.com/datvvan/affiliate/util"
 )
 
 type Business interface {
 	AddRefCode(context.Context, InputAddRefCode) (interface{}, error)
-	Subscribe(context.Context, InputSubscription) (interface{}, error)
+	Subscribe(context.Context) (interface{}, error)
 	Unsubscribe(context.Context, InputSubscription) (interface{}, error)
+	ReferralList(context.Context, string, int, int, string, bool) (interface{}, error)
 }
 
 type business struct{}
@@ -44,14 +46,13 @@ func (b *business) AddRefCode(ctx context.Context, input InputAddRefCode) (inter
 	}
 
 	updateUser := &model.User{
-		ID:               user.ID,
-		Email:            user.Email,
-		RefCode:          user.RefCode,
-		Type:             user.Type,
-		CommissionAmount: user.CommissionAmount,
-		Intermediary:     intermediary.ID,
-		UpdateAt:         time.Now(),
-		CreateAt:         user.CreateAt,
+		ID:           user.ID,
+		Email:        user.Email,
+		RefCode:      user.RefCode,
+		Type:         user.Type,
+		Intermediary: intermediary.ID,
+		UpdateAt:     time.Now(),
+		CreateAt:     user.CreateAt,
 	}
 
 	affiliateReferrals := &model.AffiliateReferrals{
@@ -66,27 +67,17 @@ func (b *business) AddRefCode(ctx context.Context, input InputAddRefCode) (inter
 	return updateUser, nil
 }
 
-func (b *business) Subscribe(ctx context.Context, input InputSubscription) (interface{}, error) {
-	userSub := &model.UserSubscription{}
+func (b *business) Subscribe(ctx context.Context) (interface{}, error) {
 
-	userSub, err := db.GetUserCommissionByUserID(input.UserID)
-	if err != nil {
-		return nil, err
-	}
+	//TODO: Handle payment process
 
-	if userSub.Type == model.AdminType {
-		return nil, errors.New("your role is admin")
-	}
-
-	err = subscribe(ctx, userSub)
-
-	return userSub, nil
+	return "subscribe step complete, we are checking the payment", nil
 }
 
 func (b *business) Unsubscribe(ctx context.Context, input InputSubscription) (interface{}, error) {
 	userSub := &model.UserSubscription{}
 
-	userSub, err := db.GetUserCommissionByUserID(input.UserID)
+	userSub, err := db.GetUserSubscriptionByUserID(input.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -101,4 +92,28 @@ func (b *business) Unsubscribe(ctx context.Context, input InputSubscription) (in
 
 	err = unsubscribe(ctx, userSub)
 	return userSub, nil
+}
+
+func (b *business) ReferralList(ctx context.Context, userID string, page int, limit int, emailQuery string, isConversion bool) (interface{}, error) {
+	pendingCommission, err := db.CountPendingCommissionEachAffiliate(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	paidCommissionTransactionCount, err := db.CountAllCommissionCompleteTransactionByUserID(userID)
+	if err != nil {
+		return nil, err
+	}
+
+	affiliateReferralsList, err := db.GetAffiliateReferralList(userID, limit, page, emailQuery, isConversion)
+	if err != nil {
+		return nil, err
+	}
+
+	response := &OutputReferralList{
+		TotalPendingAmount: pendingCommission * util.CommissionAmount,
+		TotalPaidAmount:    paidCommissionTransactionCount * util.CommissionAmount,
+		ReferralList:       affiliateReferralsList,
+	}
+	return response, nil
 }

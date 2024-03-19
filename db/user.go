@@ -2,30 +2,12 @@ package db
 
 import (
 	"context"
+	"time"
 
 	"github.com/datvvan/affiliate/model"
-	"github.com/go-pg/pg/v10"
+	"github.com/datvvan/affiliate/util"
+	"github.com/go-pg/pg/v10/orm"
 )
-
-type UserQuery interface {
-	UserUpdateByID(ctx context.Context, data *model.User) error
-}
-
-type userQuery struct{}
-type userTxQuery struct {
-	tx *pg.Tx
-}
-
-func NewUserQuery(tx *pg.Tx) UserQuery {
-	if tx == nil {
-		return &userQuery{}
-	} else {
-		return &userTxQuery{
-			tx: tx,
-		}
-	}
-
-}
 
 func UserFindOne(where string, params interface{}) (*model.User, error) {
 	instance := GetInstance()
@@ -36,7 +18,7 @@ func UserFindOne(where string, params interface{}) (*model.User, error) {
 	return data, nil
 }
 
-func GetUserCommissionByUserID(userID string) (*model.UserSubscription, error) {
+func GetUserSubscriptionByUserID(userID string) (*model.UserSubscription, error) {
 	instance := GetInstance()
 	user := &model.User{}
 	userSub := &model.UserSubscription{}
@@ -47,10 +29,9 @@ func GetUserCommissionByUserID(userID string) (*model.UserSubscription, error) {
 		ColumnExpr(`"user"."email"`).
 		ColumnExpr(`"user"."ref_code"`).
 		ColumnExpr(`"user"."intermediary"`).
-		ColumnExpr(`"user"."commission_amount"`).
 		ColumnExpr(`"s"."id" as subscription_id`).
 		ColumnExpr(`"s"."member_type"`).
-		ColumnExpr(`"s"."last_paid_date"`).
+		ColumnExpr(`"s"."transaction_id"`).
 		ColumnExpr(`"s"."end_of_trial_time"`).
 		ColumnExpr(`"s"."expired_time"`).
 		ColumnExpr(`"s"."update_at" as sub_update_at`).
@@ -63,7 +44,7 @@ func GetUserCommissionByUserID(userID string) (*model.UserSubscription, error) {
 	return userSub, nil
 }
 
-func (u *userQuery) UserUpdateByID(ctx context.Context, data *model.User) error {
+func (d *dbQuery) UserUpdateByID(ctx context.Context, data *model.User) error {
 	instance := GetInstance()
 	if _, err := instance.DB.Model(data).WherePK().Update(); err != nil {
 		return err
@@ -71,9 +52,88 @@ func (u *userQuery) UserUpdateByID(ctx context.Context, data *model.User) error 
 	return nil
 }
 
-func (u *userTxQuery) UserUpdateByID(ctx context.Context, data *model.User) error {
-	if _, err := u.tx.Model(data).WherePK().Update(); err != nil {
+func (d *dbTxQuery) UserUpdateByID(ctx context.Context, data *model.User) error {
+	if _, err := d.tx.Model(data).WherePK().Update(); err != nil {
 		return err
 	}
 	return nil
+}
+
+func GetAllAffiliateCommissionList(limit int, offset int, emailQuery string, isConversion bool, isReachCommission bool) ([]model.UserAffiliate, error) {
+	if isReachCommission == true {
+		data := model.User{}
+		result := []model.UserAffiliate{}
+		err := GetInstance().DB.Model(&data).
+			ColumnExpr(`"user"."id"`).
+			ColumnExpr(`"user"."email" as affiliate_email`).
+			ColumnExpr(`"a"."referral"`).
+			ColumnExpr(`"a"."is_conversion"`).
+			ColumnExpr(`"a"."is_canceled_sub"`).
+			ColumnExpr(`"a"."commission_status"`).
+			ColumnExpr(`"u"."email" as referral_email`).
+			ColumnExpr(`"s"."end_of_trial_time"`).
+			Join(`JOIN affiliate_referrals as a ON "a"."affiliate" = "user"."id"`).
+			Join(`JOIN users as u ON "u"."id"="a"."referral"`).
+			Join(`JOIN subscriptions as s ON "s"."user_id" = "user"."id"`).
+			Where("is_conversion", true).
+			Where("end_of_trial_time < ?", time.Now().Add(-time.Hour*util.ChallengeTime)).
+			WhereGroup(func(q *orm.Query) (*orm.Query, error) {
+				q = q.Where(`"user"."email" LIKE ?`, "%"+emailQuery+"%")
+				return q, nil
+			}).
+			Limit(limit).Offset(offset).Select(&result)
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
+	} else if isConversion == true {
+		data := model.User{}
+		result := []model.UserAffiliate{}
+		err := GetInstance().DB.Model(&data).
+			ColumnExpr(`"user"."id"`).
+			ColumnExpr(`"user"."email" as affiliate_email`).
+			ColumnExpr(`"a"."referral"`).
+			ColumnExpr(`"a"."is_conversion"`).
+			ColumnExpr(`"a"."is_canceled_sub"`).
+			ColumnExpr(`"a"."commission_status"`).
+			ColumnExpr(`"u"."email" as referral_email`).
+			ColumnExpr(`"s"."end_of_trial_time"`).
+			Join(`JOIN affiliate_referrals as a ON "a"."affiliate" = "user"."id"`).
+			Join(`JOIN users as u ON "u"."id"="a"."referral"`).
+			Join(`JOIN subscriptions as s ON "s"."user_id" = "user"."id"`).
+			Where("is_conversion", true).
+			WhereGroup(func(q *orm.Query) (*orm.Query, error) {
+				q = q.Where(`"user"."email" LIKE ?`, "%"+emailQuery+"%")
+				return q, nil
+			}).
+			Limit(limit).Offset(offset).Select(&result)
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
+	} else {
+		data := model.User{}
+		result := []model.UserAffiliate{}
+		err := GetInstance().DB.Model(&data).
+			ColumnExpr(`"user"."id"`).
+			ColumnExpr(`"user"."email" as affiliate_email`).
+			ColumnExpr(`"a"."referral"`).
+			ColumnExpr(`"a"."is_conversion"`).
+			ColumnExpr(`"a"."is_canceled_sub"`).
+			ColumnExpr(`"a"."commission_status"`).
+			ColumnExpr(`"u"."email" as referral_email`).
+			ColumnExpr(`"s"."end_of_trial_time"`).
+			Join(`JOIN affiliate_referrals as a ON "a"."affiliate" = "user"."id"`).
+			Join(`JOIN users as u ON "u"."id"="a"."referral"`).
+			Join(`JOIN subscriptions as s ON "s"."user_id" = "user"."id"`).
+			WhereGroup(func(q *orm.Query) (*orm.Query, error) {
+				q = q.Where(`"user"."email" LIKE ?`, "%"+emailQuery+"%")
+				return q, nil
+			}).
+			Limit(limit).Offset(offset).Select(&result)
+		if err != nil {
+			return nil, err
+		}
+		return result, nil
+	}
 }
