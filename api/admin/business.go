@@ -3,7 +3,6 @@ package admin
 import (
 	"context"
 	"errors"
-	"log"
 	"time"
 
 	"github.com/datvvan/affiliate/db"
@@ -29,7 +28,6 @@ func (b *business) ListConversion(ctx context.Context, offset int, limit int, em
 	if err != nil {
 		return nil, err
 	}
-	log.Println(data)
 	return data, nil
 }
 

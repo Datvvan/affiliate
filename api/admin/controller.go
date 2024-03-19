@@ -59,9 +59,3 @@ func (controller *Controller) ReviewCommission(c *gin.Context) {
 		return
 	}
 }
-
-//TODO: Api approve -> save batch_id to affiliate
-//change status to approve
-//transaction status -> PROCESSING
-
-//TODO: Handle webhook commission -> check batch_ID -> change transfer complete

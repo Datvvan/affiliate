@@ -2,7 +2,6 @@ package db
 
 import (
 	"context"
-	"log"
 
 	"github.com/datvvan/affiliate/model"
 )
@@ -24,7 +23,6 @@ func (d *dbQuery) TransactionInsertOne(ctx context.Context, data *model.UserTran
 }
 
 func (d *dbTxQuery) TransactionInsertOne(ctx context.Context, data *model.UserTransaction) error {
-	log.Println(data)
 	if _, err := d.tx.Model(data).Returning("*").Insert(); err != nil {
 		return err
 	}

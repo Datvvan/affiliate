@@ -1,7 +1,6 @@
 package user
 
 import (
-	"log"
 	"strconv"
 
 	"github.com/datvvan/affiliate/util"
@@ -63,7 +62,6 @@ func (controller *Controller) GetReferralList(c *gin.Context) {
 	page, _ := strconv.Atoi(input["page"][0])
 	limit, _ := strconv.Atoi(input["limit"][0])
 	email := input["email"][0]
-	log.Println(input)
 	isConversion, _ := strconv.ParseBool(input["isConversion"][0])
 	offset, limit := util.GetPagination(page, limit)
 
