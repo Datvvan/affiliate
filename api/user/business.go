@@ -100,7 +100,7 @@ func (b *business) ReferralList(ctx context.Context, userID string, page int, li
 		return nil, err
 	}
 
-	paidCommissionTransactionCount, err := db.CountAllCommissionCompleteTransactionByUserID(userID)
+	sumData, err := db.TotalPaidCommissionCompleteTransactionByUserId(userID)
 	if err != nil {
 		return nil, err
 	}
@@ -111,8 +111,8 @@ func (b *business) ReferralList(ctx context.Context, userID string, page int, li
 	}
 
 	response := &OutputReferralList{
-		TotalPendingAmount: pendingCommission * util.CommissionAmount,
-		TotalPaidAmount:    paidCommissionTransactionCount * util.CommissionAmount,
+		TotalPendingAmount: float32(pendingCommission * util.CommissionAmount),
+		TotalPaidAmount:    sumData.Sum,
 		ReferralList:       affiliateReferralsList,
 	}
 	return response, nil

@@ -13,7 +13,7 @@ type InputSubscription struct {
 }
 
 type OutputReferralList struct {
-	TotalPendingAmount int
-	TotalPaidAmount    int
+	TotalPendingAmount float32
+	TotalPaidAmount    float32
 	ReferralList       []model.ReferralList
 }

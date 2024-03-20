@@ -20,3 +20,7 @@ type UserTransaction struct {
 	CreateAt  time.Time         `json:"create_at"`
 	UpdateAt  time.Time         `json:"update_at"`
 }
+
+type SumTransaction struct {
+	Sum float32 `json:"sum" pg:"sum"`
+}

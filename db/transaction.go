@@ -15,6 +15,17 @@ func CountAllCommissionCompleteTransactionByUserID(userID string) (int, error) {
 	return count, nil
 }
 
+func TotalPaidCommissionCompleteTransactionByUserId(userID string) (*model.SumTransaction, error) {
+	data := &model.UserTransaction{}
+	sumData := &model.SumTransaction{}
+	err := GetInstance().DB.Model(data).Where("user_id = ?", userID).Where("type = ?", model.CommissionTrans).Where("status = ?", model.TransComplete).ColumnExpr(`SUM(amount) as sum`).Select(sumData)
+	if err != nil {
+		return nil, err
+	}
+
+	return sumData, err
+}
+
 func (d *dbQuery) TransactionInsertOne(ctx context.Context, data *model.UserTransaction) error {
 	if _, err := GetInstance().DB.Model(data).Returning("*").Insert(); err != nil {
 		return err
